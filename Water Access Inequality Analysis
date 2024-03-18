@@ -1,0 +1,65 @@
+Creating Lorenz curve and Gini Coefficient in R
+
+# Load necessary libraries
+library(ineq)  # for Gini coefficient and Lorenz curve calculations
+library(ggplot2)  # for plotting
+library(readxl)  # for reading Excel files
+
+# Load your data
+data <- G2SFCA_C
+
+# Split data by community
+communities <- split(data, data$Comm)
+
+# Initialize an empty list to store Gini coefficients and labels for the legend
+gini_coeffs <- list()
+legend_labels <- c()
+
+
+# Calculate Lorenz curve and Gini coefficient for each community
+for (comm in names(communities)) {
+  lorenz_obj <- Lc(communities[[comm]]$SUM_R500)
+  gini_coeff <- 1 - 2 * sum(lorenz_obj$L * diff(c(0, lorenz_obj$p)))
+  gini_coeffs[[comm]] <- round(gini_coeff, 2)
+  legend_labels <- c(legend_labels, paste(sub("HT", "(a)", sub("CEN", "(b)", sub("JK", "(c)", comm))), ": Gini =", round(gini_coeff, 2)))
+  sorted_legend_lab <- sort(legend_labels)
+}
+print (sorted_legend_lab)
+
+
+# Define the colors and linetypes
+colors <- c("Equality" = "black", "HT" = "red", "CEN" = "blue", "JK" = "green")
+linetypes <- c("Equality" = "dashed", "HT" = "solid", "CEN" = "solid", "JK" = "solid")
+#rint(colors)
+
+# Create the combined dataset for plotting
+plot_data <- do.call(rbind, lapply(names(communities), function(comm) {
+  lorenz_obj <- Lc(communities[[comm]]$SUM_R500)
+  data.frame(cum_pop = lorenz_obj$p, cum_share = lorenz_obj$L, Comm = factor(comm, levels = names(gini_coeffs)))
+}))
+print(plot_data)
+
+
+plot1 <- ggplot(plot_data, aes(x = cum_pop, y = cum_share, color = Comm)) + 
+  geom_line(data = data.frame(x = c(0, 1), y = c(0, 1)), aes(x = x, y = y, linetype = "Equality"), color = "black", size = 1.5) + # Equality line
+  scale_linetype_manual(values = c("dashed"), labels = c("Equality (Gini c=0)"))+
+  geom_line(aes(color = Comm), size = 1.2) + # Community lines
+  #scale_color_manual(values = colors, labels = legend_labels) +
+  scale_color_manual(values = colors, labels = legend_labels) +
+    labs(
+    x = "Cumulative proportion of households",
+    y = "Cumulative proportion of accessibility") +
+  theme(legend.title = element_blank()) 
+plot <- plot1 + 
+  theme(
+    legend.position = c(0.28, 0.85), # Adjust the position as needed (0,0 is bottom left; 1,1 is top right)
+    legend.justification = c("right", "top"), # Anchor point for legend position
+    legend.box.just = "center", # Justify legend box inside plot
+    legend.box.margin = margin(1,1,1,1), # Remove margin around legend box
+    legend.margin = margin(1,1,1,1), # Remove margin around each legend item
+    legend.spacing.y = unit(0.2, "lines"), # Close the gap between legend items
+    legend.key.size = unit(2.5, "lines"), # Adjust the size of the legend keys if needed
+    text = element_text(size = 18) # Increase the font size for all text elements
+  )
+
+print(plot)
