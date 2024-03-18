@@ -1,0 +1,44 @@
+library(readr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(broom)
+library(tidyverse)
+
+# Assuming 'data' is your dataframe with the structure NDVI_Year, LST_Year, etc.
+data<- Sundarban_NDVI_LST_Samples
+
+head(data)
+
+data_long <- data %>%
+  pivot_longer(
+    cols = everything(), # Targets all columns in the dataframe
+    names_to = c(".value", "Year"), # Splitting column names into 'value' (holds NDVI/LST) and 'Year'
+    names_pattern = "(NDVI|LST_Day_1km)(\\d+)", # Regex to match and separate indicators from years
+    values_to = "Value" # The measured values (NDVI/LST readings)
+  ) %>%
+  mutate(Year = as.numeric(Year))
+print(data_long)
+# Verify the structure
+str(data_long)
+
+
+# Calculate correlations and p-values
+correlation_data <- correlation_data %>%
+  mutate(label = ifelse(p_value < 0.001, 
+                        paste0("Pearson coef.: ", round(correlation, 2), "\n", "p-value: <0.001"),
+                        paste0("Pearson coef.: ", round(correlation, 2), "\n", "p-value: ", format.pval(p_value, digits = 3))))
+
+# Proceed to plot
+ggplot(data_long, aes(x = NDVI, y = LST_Day_1km)) +
+  geom_point(alpha = 0.3, color='blue') +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  facet_wrap(~Year, scales = "free") +
+  geom_text(data = correlation_data, aes(label = label, x = Inf, y = Inf), hjust = 2.1, vjust = 1.2, check_overlap = TRUE) +
+  theme_minimal() +
+  labs(title = "",
+       x = "NDVI", # Label for the x-axis
+       y = "LST") + # Label for the y-axis
+  theme(strip.text = element_text(size = 14))+
+  theme(axis.text.x = element_text(size = 12),  # Adjust the size for the x-axis text
+        axis.text.y = element_text(size = 12))  # Adjust the size for the y-axis text
