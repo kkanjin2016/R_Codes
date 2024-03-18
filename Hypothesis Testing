@@ -1,0 +1,52 @@
+Testing Difference in means
+
+
+library(readxl)
+attach(GSWarriors2019)
+
+#Checking descriptive stat of the data
+summary(GSWarriors2019)
+ncol(GSWarriors2019)
+nrow(GSWarriors2019)
+n<-length(GSWarriors2019$Game)
+boxplot(FTA)
+
+# Question 1: Calculating t-statistics
+mean(FTA)
+sd(FTA)
+t.test(FTA,conf.level = 0.90)
+
+# Question 2: testing difference in proportions
+prop.test(x=sum(FT), n=sum(FTA),
+          conf.level = 0.90,correct = F)
+
+
+# Question 3: Testing difference in means for two groups
+tapply(FT,Location,length)
+tapply(FT,Location,mean)
+tapply(FT,Location,sd)
+par(mfrow=c(1,1))
+boxplot(FT~Location,data=GSWarriors2019, Vertical=TRUE)
+GSW_home<-filter(GSWarriors2019, Location=="Home")
+GSW_away<-filter(GSWarriors2019, Location=="Away")
+summary(GSW_home$FT)
+summary(GSW_away$FT)
+
+
+boxplot(FT~Location,data = GSWarriors2019)
+t.test(x=GSW_home, y = GSW_away,
+       alternative = c("greater"), mu=0,
+       paired = FALSE, var.equal = FALSE,
+       conf.level = 0.90)
+
+#Question 4
+GSW_FTA<-GSWarriors2019$FTA
+GSW_OppFTA<-GSWarriors2019$OppFTA
+match_1<-c("GSWarriors2019", "OPP")
+summary(GSW_FTA)
+summary(GSW_OppFTA)
+boxplot(GSW_FTA,GSW_OppFTA, names = match_1)
+t.test(x=GSW_FTA, y = GSW_OppFTA,
+       alternative = c("two.sided"), mu=0,
+       paired = FALSE, var.equal = FALSE,
+       conf.level = 0.95)
